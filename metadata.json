@@ -1,0 +1,6 @@
+{
+  "name": "Blih ERP Employee Self Service",
+  "description": "Secure employee information self-service collection and HR review portal for Blih ERP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
