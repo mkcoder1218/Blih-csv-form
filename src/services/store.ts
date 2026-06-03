@@ -190,33 +190,27 @@ export function initializeStore(): void {
     status: "DRAFT",
     submittedAt: null,
     approvedAt: null,
-    firstName: "Elena",
-    lastName: "Rostova",
-    dateOfBirth: "1997-04-05",
-    city: "Riga",
-    countryOfBirth: "Latvia",
-    identityDocumentFile: {
-      name: "elena_r_passport.jpg",
-      size: 2190000,
-      type: "image/jpeg",
-      uploadedAt: "2026-06-02T16:00:00Z",
-      dataUrl: MOCK_PASSPORT_PREVIEW,
-    },
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
+    city: "",
+    countryOfBirth: "",
+    identityDocumentFile: null,
     identityDocumentStatus: "PENDING",
     identityDocumentComment: "",
     identityVerifiedAt: null,
     identityVerifiedBy: null,
-    email: "elena.rostova@example.com",
-    phone: "+37129555123",
+    email: "",
+    phone: "",
     additionalPhone: "",
-    emergencyFirstName: "Yury",
-    emergencyLastName: "Rostov",
-    emergencyPhone: "+37129555789",
+    emergencyFirstName: "",
+    emergencyLastName: "",
+    emergencyPhone: "",
     emergencyEmail: "",
-    emergencyCity: "Riga",
-    emergencyCountry: "Latvia",
-    bankName: "Swedbank Latvia",
-    bankAccountNumber: "LV80SWED000123456789",
+    emergencyCity: "",
+    emergencyCountry: "",
+    bankName: "",
+    bankAccountNumber: "",
 
     // HR Controls (blank or prefilled by HR, but employee form is current draft)
     employeeCode: "EMP-2026-003",
@@ -233,7 +227,7 @@ export function initializeStore(): void {
     contractEndDate: "2027-07-14",
     monthlySalary: 3100,
     salaryCurrency: "EUR",
-    additionalNotes: "Saving progress to complete emergency contacts later.",
+    additionalNotes: "",
     correctionMessage: "",
     correctionRequestedAt: null,
     correctionRequestedBy: null,
@@ -422,6 +416,33 @@ export function initializeStore(): void {
   if (!currentSubmissions) {
     submissions.push(emp1, emp2, emp3, emp4, emp5);
     localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+  } else {
+    try {
+      const existing: EmployeeRecord[] = JSON.parse(currentSubmissions);
+      const draftIdx = existing.findIndex(e => e.id === "rec_demo_3" || e.token === "token_demo_draft_101");
+      if (draftIdx !== -1) {
+        existing[draftIdx].firstName = "";
+        existing[draftIdx].lastName = "";
+        existing[draftIdx].dateOfBirth = "";
+        existing[draftIdx].city = "";
+        existing[draftIdx].countryOfBirth = "";
+        existing[draftIdx].identityDocumentFile = null;
+        existing[draftIdx].email = "";
+        existing[draftIdx].phone = "";
+        existing[draftIdx].additionalPhone = "";
+        existing[draftIdx].emergencyFirstName = "";
+        existing[draftIdx].emergencyLastName = "";
+        existing[draftIdx].emergencyPhone = "";
+        existing[draftIdx].emergencyEmail = "";
+        existing[draftIdx].emergencyCity = "";
+        existing[draftIdx].emergencyCountry = "";
+        existing[draftIdx].bankName = "";
+        existing[draftIdx].bankAccountNumber = "";
+        localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(existing));
+      }
+    } catch (e) {
+      // safe fallback
+    }
   }
   if (!currentInvitations) {
     invitations.push(invite1, invite2, invite3, invite4, invite5);
