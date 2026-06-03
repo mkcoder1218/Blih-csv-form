@@ -25,7 +25,8 @@ import {
   TextField, 
   DateField, 
   SelectField, 
-  FileUploadField 
+  FileUploadField,
+  MultiSelectRoles
 } from "./FormFields";
 import { 
   CorrectionMessage, 
@@ -114,7 +115,11 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       }
     }
 
-    // Step 5 (Employment review) has no input fields for employee (Read-only review page)
+    if (stepNum === 5) {
+      if (!record.departmentName) stepErrors.departmentName = "Department Name is required.";
+      if (!record.positionName.trim()) stepErrors.positionName = "Position Name is required.";
+      if (!record.roleKeys || record.roleKeys.length === 0) stepErrors.roleKeys = "At least one system role must be selected.";
+    }
     
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
@@ -179,7 +184,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
     }
   };
 
-  const isFormLocked = record.status === "SUBMITTED" || record.status === "APPROVED";
+  const isFormLocked = record.status === "APPROVED";
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -193,20 +198,38 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
           />
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4.5 flex items-center justify-between gap-4 shadow-xs">
+        <div className="bg-white rounded-xl border border-slate-200 p-4.5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
           <div className="space-y-0.5">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider font-mono">Form Status</h2>
             <div className="flex items-center gap-2 mt-1">
               <SubmissionStatusBadge status={record.status} />
-              {isFormLocked && (
+              {record.status === "SUBMITTED" && (
+                <span className="text-[11px] font-mono font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                  Editable until approved
+                </span>
+              )}
+              {record.approvedAt && (
                 <span className="text-xs text-slate-500 flex items-center gap-1">
-                  • Locked on {record.submittedAt ? new Date(record.submittedAt).toLocaleDateString() : ""}
+                  • Locked on {new Date(record.approvedAt).toLocaleDateString()}
                 </span>
               )}
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Always allow download if submitted at least once */}
+            {(record.status === "SUBMITTED" || record.status === "APPROVED") && (
+              <button
+                type="button"
+                onClick={() => downloadRecordAsCsv(record, `Blih_ERP_Submission_${record.firstName}_${record.lastName}`)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 border border-slate-750 hover:bg-slate-800 text-slate-100 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-xs"
+                title="Download a copy of your submitted onboarding data in Blih ERP CSV format"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-300" />
+                <span>Download ERP CSV</span>
+              </button>
+            )}
+
             {!isFormLocked && (
               <button
                 type="button"
@@ -219,21 +242,10 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
             )}
             
             {isFormLocked && (
-              <div className="flex flex-wrap gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={() => downloadRecordAsCsv(record, `Blih_ERP_Submission_${record.firstName}_${record.lastName}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-750 hover:bg-slate-800 text-slate-100 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-xs"
-                  title="Download a copy of your submitted onboarding data in Blih ERP CSV format"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-300" />
-                  <span>Download ERP CSV</span>
-                </button>
-                <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  Submitted and Sealed
-                </span>
-              </div>
+              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                Approved & Locked
+              </span>
             )}
           </div>
         </div>
@@ -298,8 +310,8 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       </div>
 
       {/* Main Interactive Interactive Step Form Box */}
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        <div className="border-b border-slate-100 px-6.5 py-4.5 bg-slate-50/40 flex justify-between items-center bg-transparent">
+      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-visible relative z-10">
+        <div className="border-b border-slate-100 px-6.5 py-4.5 bg-slate-50/40 flex justify-between items-center bg-transparent rounded-t-2xl">
           <div className="space-y-0.5">
             <h3 className="text-base font-bold text-slate-800">{steps[currentStep - 1].label} Information</h3>
             <p className="text-xs text-slate-500">Please make sure details correspond to official registration registries.</p>
@@ -504,74 +516,89 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
           {/* STEP 5: HR / EMPLOYEMENT CONTROL REVIEW */}
           {currentStep === 5 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-start gap-3">
-                <Briefcase className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
+                <Briefcase className="w-5 h-5 text-slate-550 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-800">Company-Controlled Employment Records</h4>
-                  <p className="text-xs text-slate-505 leading-normal mt-0.5">
-                    These parameters are managed directly by HR Admin. Employees have read-only access here. For changes, please message your assigned recruiter.
+                  <h4 className="text-sm font-semibold text-slate-800">Job Settings & Organizational Assignment</h4>
+                  <p className="text-xs text-slate-500 leading-normal mt-0.5">
+                    Configure your department, target position, and required ERP system roles. Other institutional keys such as code allocations are maintained by HR.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4.5 pt-2">
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Employee Code</div>
-                  <div className="text-sm font-semibold text-slate-800 font-mono mt-1">{record.employeeCode || "PENDING PROVISION"}</div>
+              {/* Administrative Sealed Cards Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl text-left">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Employee Code</div>
+                  <div className="text-xs font-bold text-slate-700 font-mono mt-0.5">{record.employeeCode || "PENDING"}</div>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Hire Date</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1">{record.hireDate || "NOT SET"}</div>
+                <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl text-left">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Hire Date</div>
+                  <div className="text-xs font-bold text-slate-700 mt-0.5">{record.hireDate || "PENDING"}</div>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Manager Assignment</div>
-                  <div className="text-sm font-semibold text-slate-800 truncate mt-1" title={record.managerEmail}>{record.managerEmail || "NOT ASSIGNED"}</div>
+                <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl text-left">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Assigned Branch</div>
+                  <div className="text-xs font-bold text-slate-700 truncate mt-0.5" title={record.branch}>{record.branch || "Headquarters"}</div>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Department</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1">{record.departmentName || "General Admin"}</div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Position Title</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1">{record.positionName || "Standard Associate"}</div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Branch</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1">{record.branch || "Headquarters"}</div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Employment Type</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1 capitalize">{record.employmentType ? record.employmentType.replace("_", " ") : "Not selected"}</div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ERP System Role(s)</div>
-                  <div className="text-xs font-semibold text-emerald-800 flex flex-wrap gap-1 mt-1">
-                    {record.roleKeys.map((r) => (
-                      <span key={r} className="bg-emerald-100/50 px-1.5 py-0.5 rounded font-mono uppercase text-[10px]">
-                        {r}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Probation Limit</div>
-                  <div className="text-sm font-semibold text-slate-800 mt-1">{record.probationEndDate || "None set"}</div>
+                <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl text-left">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Employment Type</div>
+                  <div className="text-xs font-bold text-slate-705 mt-0.5 capitalize">{record.employmentType ? record.employmentType.replace("_", " ") : "Not selected"}</div>
                 </div>
               </div>
-              
+
+              {/* Editable Fields */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4.5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField
+                    id="deptSelect"
+                    label="Assigned Department"
+                    required
+                    disabled={isFormLocked}
+                    value={record.departmentName}
+                    onChange={(val) => updateField("departmentName", val)}
+                    error={errors.departmentName}
+                    placeholder="Select Department (Creative, Digital, HR, etc)..."
+                    options={[
+                      { value: "Creative", label: "Creative" },
+                      { value: "Digital", label: "Digital" },
+                      { value: "HR", label: "HR" },
+                      { value: "Finance", label: "Finance" },
+                      { value: "Project manager", label: "Project manager" },
+                      { value: "Technology", label: "Technology" },
+                      { value: "Other", label: "Other" },
+                    ]}
+                  />
+
+                  <TextField
+                    id="positionInput"
+                    label="Position / Designation"
+                    required
+                    disabled={isFormLocked}
+                    value={record.positionName}
+                    onChange={(val) => updateField("positionName", val)}
+                    error={errors.positionName}
+                    placeholder="Enter designation (e.g. Designer, Manager, Specialist)..."
+                  />
+                </div>
+
+                <div className="pt-1.5">
+                  <MultiSelectRoles
+                    selectedRoles={record.roleKeys}
+                    onChange={(roles) => updateField("roleKeys", roles)}
+                    disabled={isFormLocked}
+                    error={errors.roleKeys}
+                  />
+                </div>
+              </div>
+
               {record.additionalNotes && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recruitment / Contract Notes</div>
-                  <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap">{record.additionalNotes}</p>
+                <div className="p-3 bg-slate-50 border border-slate-150 rounded-xl text-left">
+                  <div className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Recruitment / Contract Annotations</div>
+                  <p className="text-xs text-slate-650 mt-1 whitespace-pre-wrap">{record.additionalNotes}</p>
                 </div>
               )}
             </div>
@@ -738,7 +765,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
         </div>
 
         {/* Form Nav Buttons footer */}
-        <div className="border-t border-slate-100 bg-slate-50/55 px-6.5 py-4 flex items-center justify-between">
+        <div className="border-t border-slate-100 bg-slate-50/55 px-6.5 py-4 flex items-center justify-between rounded-b-2xl">
           <button
             type="button"
             onClick={handlePrev}

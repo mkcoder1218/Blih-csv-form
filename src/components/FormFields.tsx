@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from "react";
-import { Upload, FileText, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, X, Lock, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { MockFileMetadata, RoleKey } from "../types";
 import { simulateSecureFileUpload, formatBytes } from "../services/store";
 
@@ -202,19 +202,19 @@ export const MultiSelectRoles: React.FC<MultiSelectRolesProps> = ({
   disabled = false,
   error,
 }) => {
-  const allowedRoles: { key: RoleKey; label: string; desc: string }[] = [
-    { key: "EMPLOYEE", label: "Employee", desc: "Standard entry role" },
-    { key: "DEPARTMENT_HEAD", label: "Department Head", desc: "Department level manager" },
-    { key: "PROJECT_MANAGER", label: "Project Manager", desc: "Drives specific project teams" },
-    { key: "CRM_MANAGER", label: "CRM Manager", desc: "Oversees customer success integrations" },
-    { key: "FINANCE_MANAGER", label: "Finance Manager", desc: "Controls budget approvals" },
-    { key: "HR_MANAGER", label: "HR Manager", desc: "Oversees onboarding cycles" },
+  const [isOpen, setIsOpen] = useState(false);
+  const allowedRoles: { key: RoleKey; label: string }[] = [
+    { key: "EMPLOYEE", label: "EMPLOYEE" },
+    { key: "DEPARTMENT_HEAD", label: "DEPARTMENT HEAD" },
+    { key: "PROJECT_MANAGER", label: "PROJECT MANAGER" },
+    { key: "CRM_MANAGER", label: "CRM MANAGER" },
+    { key: "FINANCE_MANAGER", label: "FINANCE MANAGER" },
+    { key: "HR_MANAGER", label: "HR MANAGER" },
   ];
 
   const handleToggle = (key: RoleKey) => {
     if (disabled) return;
     if (selectedRoles.includes(key)) {
-      // Allow deselecting, but keep at least 1 role assigned ideally (handled in validations)
       onChange(selectedRoles.filter((r) => r !== key));
     } else {
       onChange([...selectedRoles, key]);
@@ -222,46 +222,106 @@ export const MultiSelectRoles: React.FC<MultiSelectRolesProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 relative">
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-slate-700">
-          Role Assignment(s) <span className="text-rose-500 font-bold">*</span>
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">
+          ERP SYSTEM ROLE(S) <span className="text-rose-500 font-bold">*</span>
         </span>
-        <span className="text-xs text-slate-500 font-mono">Export: {selectedRoles.join("|")}</span>
+        <span className="text-xs text-slate-400 font-mono mt-0.5">Export: {selectedRoles.join("|")}</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {allowedRoles.map((role) => {
-          const isChecked = selectedRoles.includes(role.key);
-          return (
+
+      {/* Styled Trigger Dropdown Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full p-3.5 bg-white border rounded-xl shadow-xs transition-all flex items-center justify-between text-left hover:border-slate-350 cursor-pointer
+          ${disabled ? "bg-slate-50/70 border-slate-200 cursor-not-allowed opacity-75" : "border-slate-200"}
+          ${isOpen ? "ring-2 ring-indigo-500/10 border-indigo-500" : ""}
+        `}
+      >
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {selectedRoles.length === 0 ? (
+            <span className="text-slate-450 font-normal text-xs italic">Select required systems roles (click to open)...</span>
+          ) : (
+            selectedRoles.map((role) => (
+              <span key={role} className="px-2.5 py-1 bg-slate-900 border border-slate-750 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider font-mono">
+                {role.replace("_", " ")}
+              </span>
+            ))
+          )}
+        </div>
+        <div className="text-slate-400 shrink-0 ml-2">
+          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
+      </button>
+
+      {/* Dropdown Options List styled exactly like the provided image */}
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50 space-y-2 max-h-96 overflow-y-auto">
+          <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono pb-1 border-b border-slate-100 flex justify-between items-center px-1">
+            <span>Select System Role Keys</span>
+            <span className="text-emerald-555 font-bold">Multi-Select Active</span>
+          </div>
+
+          <div className="space-y-1 pt-1.5">
+            {allowedRoles.map((role) => {
+              const isChecked = selectedRoles.includes(role.key);
+              return (
+                <button
+                  key={role.key}
+                  type="button"
+                  onClick={() => handleToggle(role.key)}
+                  className={`w-full p-2.5 text-left rounded-xl border transition-all flex items-center gap-3.5 select-none cursor-pointer
+                    ${isChecked 
+                      ? "border-indigo-100 bg-slate-50/75 shadow-xs" 
+                      : "border-transparent bg-white hover:bg-slate-50/45"}
+                  `}
+                >
+                  {/* Left lock icon inside light slate box */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all border
+                    ${isChecked 
+                      ? "bg-white border-slate-200 text-slate-700 shadow-xs" 
+                      : "bg-slate-50 border-transparent text-slate-400"}
+                  `}>
+                    <Lock className="w-4 h-4 stroke-[2.2]" />
+                  </div>
+
+                  {/* Middle texts */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-800 tracking-tight">
+                      {role.label}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold tracking-wider font-mono mt-0.5">
+                      {role.key}
+                    </div>
+                  </div>
+
+                  {/* Checkmark or checkbox Indicator */}
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all border
+                    ${isChecked 
+                      ? "bg-emerald-600 border-emerald-650 text-white shadow-2xs" 
+                      : "border-slate-200 bg-white"}
+                  `}>
+                    {isChecked && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 text-right">
             <button
-              key={role.key}
               type="button"
-              disabled={disabled}
-              onClick={() => handleToggle(role.key)}
-              className={`p-3 text-left rounded-xl border transition-all flex items-start gap-3 select-none cursor-pointer
-                ${isChecked 
-                  ? "border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500" 
-                  : "border-slate-200 bg-white hover:border-slate-300"}
-                ${disabled ? "opacity-60 cursor-not-allowed" : ""}
-              `}
+              onClick={() => setIsOpen(false)}
+              className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-all"
             >
-              <div className={`w-5 h-5 rounded border mt-0.5 flex items-center justify-center shrink-0 transition-all
-                ${isChecked ? "bg-emerald-500 border-emerald-600 text-white" : "border-slate-300 bg-white"}
-              `}>
-                {isChecked && (
-                  <svg className="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-slate-800">{role.label}</div>
-                <div className="text-[11px] text-slate-500 font-normal leading-normal">{role.desc}</div>
-              </div>
+              Done Selecting
             </button>
-          );
-        })}
-      </div>
+          </div>
+        </div>
+      )}
+
       {error && (
         <span className="text-xs text-rose-600 flex items-center gap-1 mt-1">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />

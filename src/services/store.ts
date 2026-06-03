@@ -220,9 +220,9 @@ export function initializeStore(): void {
 
     // HR Controls (blank or prefilled by HR, but employee form is current draft)
     employeeCode: "EMP-2026-003",
-    roleKeys: ["CRM_MANAGER", "EMPLOYEE"],
-    departmentName: "Customer Excellence",
-    positionName: "CRM Operations Admin",
+    roleKeys: [],
+    departmentName: "",
+    positionName: "",
     managerEmail: "support.head@blih-erp.com",
     branch: "Baltics Team",
     employmentType: "part_time",
@@ -233,7 +233,7 @@ export function initializeStore(): void {
     contractEndDate: "2027-07-14",
     monthlySalary: 3100,
     salaryCurrency: "EUR",
-    additionalNotes: "Will work 25 hours per week. Saving progress to complete emergency contacts later.",
+    additionalNotes: "Saving progress to complete emergency contacts later.",
     correctionMessage: "",
     correctionRequestedAt: null,
     correctionRequestedBy: null,
@@ -589,7 +589,7 @@ export function createInvitation(payload: {
     bankName: "",
     bankAccountNumber: "",
     employeeCode: payload.employeeCode.trim(),
-    roleKeys: ["EMPLOYEE"], // Default standard role
+    roleKeys: [], // Start clean for guided placeholders
     departmentName: "",
     positionName: "",
     managerEmail: "",

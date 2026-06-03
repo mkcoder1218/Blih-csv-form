@@ -25,7 +25,8 @@ export const EmployeeFormPortal: React.FC<EmployeeFormPortalProps> = ({
   token,
   onNavigateToLogin,
 }) => {
-  const initialRecord = findSubmissionByToken(token);
+  // Try to find the token in parameters. Fall back to direct demo draft if empty or not found to ensure persistent form presence on root.
+  const initialRecord = (token ? findSubmissionByToken(token) : null) || findSubmissionByToken("token_demo_draft_101");
   const [record, setRecord] = useState<EmployeeRecord | null>(initialRecord);
   const [justSubmitted, setJustSubmitted] = useState(false);
 
@@ -53,22 +54,22 @@ export const EmployeeFormPortal: React.FC<EmployeeFormPortalProps> = ({
           <div className="bg-slate-905 border border-slate-800 p-4 rounded-lg text-left text-[11px] leading-relaxed text-slate-400 space-y-1.5">
             <span className="font-bold text-white uppercase tracking-wider block">Security Recommendations:</span>
             <p>1. Check that the URL token matches your email invitation precisely.</p>
-            <p>2. Message your assigned talent scout at <span className="font-semibold text-slate-305">recruitment@blih-erp.com</span> to request a link refresh.</p>
+            <p>2. Message your assigned talent scout at <span className="font-semibold text-slate-355">recruitment@blih-erp.com</span> to request a link refresh.</p>
           </div>
 
           <button
             type="button"
-            onClick={onNavigateToLogin}
+            onClick={() => window.location.reload()}
             className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white font-bold text-xs rounded-lg uppercase tracking-wide cursor-pointer transition-all border border-slate-700"
           >
-            Return to Portal Gate
+            Reload Gateway
           </button>
         </div>
       </div>
     );
   }
 
-  const isFormLocked = record.status === "SUBMITTED" || record.status === "APPROVED";
+  const isFormLocked = record.status === "APPROVED";
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
@@ -82,19 +83,8 @@ export const EmployeeFormPortal: React.FC<EmployeeFormPortalProps> = ({
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-widest font-mono">Blih ERP Portal</span>
-              <h1 className="text-sm font-bold text-white tracking-tight">Employee Self-Service</h1>
+              <h1 className="text-sm font-bold text-white tracking-tight font-display">Employee Self-Service Onboarding</h1>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onNavigateToLogin}
-              className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-all cursor-pointer bg-transparent"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Lobby</span>
-            </button>
           </div>
         </div>
       </header>
@@ -103,17 +93,32 @@ export const EmployeeFormPortal: React.FC<EmployeeFormPortalProps> = ({
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         
         {/* Onboarding Welcome / Completion Header */}
-        {justSubmitted || (isFormLocked && record.status === "SUBMITTED") ? (
+        {record.status === "APPROVED" ? (
+          <div className="p-6.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 space-y-4 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 shrink-0 select-none">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-400 font-mono">Profile Verified & Sealed</div>
+                <h2 className="text-lg font-bold text-white mt-0.5">Welcome Aboard, {record.firstName}!</h2>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-xl">
+                  Your onboarding file has been formally approved and locked by HR Admin. It is fully synchronized with the Blih ERP registry.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : justSubmitted || record.status === "SUBMITTED" ? (
           <div className="p-6.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-4 shadow-xs">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-emerald-110 rounded-xl flex items-center justify-center text-emerald-700 shrink-0 select-none">
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700 shrink-0 select-none">
                 <FileCheck className="w-7 h-7" />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 font-mono">Submission Successful</div>
+                <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 font-mono">Submission Received (Editable)</div>
                 <h2 className="text-lg font-bold text-slate-800 mt-0.5">Thank you, {record.firstName}!</h2>
-                <p className="text-xs text-emerald-805 mt-1 leading-relaxed max-w-xl">
-                  Your information has been securely sealed and is under active review by HR Admin. Your onboarding credentials will be provisioned once your identity document is verified.
+                <p className="text-xs text-emerald-800 mt-1 leading-relaxed max-w-xl">
+                  Your details are currently being reviewed by HR Admin. **You can still edit any section below and submit again** if you need to make changes before your account is approved.
                 </p>
               </div>
             </div>

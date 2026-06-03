@@ -429,13 +429,23 @@ export const HrSubmissionDetail: React.FC<HrSubmissionDetailProps> = ({
                   helpText="Start date representing HR contract triggers."
                 />
 
-                <TextField
+                <SelectField
                   id="hrDept"
                   label="Department Name"
+                  required
                   disabled={isApproved}
                   value={dept}
                   onChange={(val) => setDept(val)}
-                  placeholder="Software Engineering"
+                  placeholder="Select department..."
+                  options={[
+                    { value: "Creative", label: "Creative" },
+                    { value: "Digital", label: "Digital" },
+                    { value: "HR", label: "HR" },
+                    { value: "Finance", label: "Finance" },
+                    { value: "Project manager", label: "Project manager" },
+                    { value: "Technology", label: "Technology" },
+                    { value: "Other", label: "Other" },
+                  ]}
                 />
 
                 <TextField
